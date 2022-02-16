@@ -1,4 +1,5 @@
-%data preprocessing from sensor1.text
+%experiments on real data over many values of n
+
 %the dataset is of size 58509
 %code works for upto n=2^15
 data = importdata('covt1.dat');

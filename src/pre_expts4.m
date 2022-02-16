@@ -1,3 +1,6 @@
+% Experiments on gamma with degrees 1, 2, 3
+
+
 % gamma
 % tuning parameter for SURF
 alp = 0.25;

@@ -1,10 +1,13 @@
+% Experiments on GMM with degree 1
+
+
 % gaussian
 % degree
-deg = 2;
+deg = 1;
 % tuning parameter for SURF
 alp = 0.25;
 % mixture probability
-prob = .3;
+prob = .4;
 % number of samples
 for j= 9:15
 n = 2^j
@@ -18,10 +21,10 @@ for i = 1:niter
     f = rand(1,m) <= prob;
     f = floor(floor(2*f)/2);
     % gaussian mixture
-    gauss_m = .4;
-    gauss_sd = .1;
-    gauss_m_1 = .6;
-    gauss_sd_1 = .2;
+    gauss_m = .3;
+    gauss_sd = .05;
+    gauss_m_1 = .7;
+    gauss_sd_1 = .15;
     samp = f.*normrnd(gauss_m, gauss_sd, [1,m])+...
     (1-f).*normrnd(gauss_m_1, gauss_sd_1, [1,m]);
     % remove 2n_ex samples out and rescale

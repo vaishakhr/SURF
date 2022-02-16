@@ -1,6 +1,9 @@
+% Experiments on GMM with degree 2
+
+
 % gaussian
 % degree
-deg = 3;
+deg = 2;
 % tuning parameter for SURF
 alp = 0.25;
 % mixture probability

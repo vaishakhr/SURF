@@ -1,5 +1,5 @@
 # SURF
- The SURF Algorithm to learn Univariate Distributions
+ The SURF Algorithm to learn univariate distributions
 
 The file surf.m defines the function surf(n, alp, deg)
 n is number of samples
@@ -8,4 +8,4 @@ deg is the degree of polynomial. Code written to work for deg<=4
 
 Code is currently written recursively and may take some time to run, especially for higher degrees
 
-Modify parameters within surf.m for to learn on different distributions
+Also contains several experiment files corresponding to our NeurIPS 2020 paper

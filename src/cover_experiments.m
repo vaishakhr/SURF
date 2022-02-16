@@ -1,8 +1,9 @@
-%experiments on real data over many values of n
+%experiemnts on real data
 
+%data preprocessing from covt1.dat
 %the dataset is of size 58509
-%code works for upto n=2^15
-data = importdata('covt1.dat');
+%code works for upto n=2^15, d<=2
+data = importdata('../data/covt1.dat');
 data = randsample(data,numel(data));
 
 n = ceil(numel(data)/2);

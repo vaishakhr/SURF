@@ -1,7 +1,9 @@
+%experiemnts on real data
+
 %importing data from salary.dat
 %the dataset is of size 32235 after removing outliers, and comes shuffled
 %code works for upto n=2^13, d<=2
-sal = importdata('salary.dat');
+sal = importdata('../data/salary.dat');
 
 % perplex_SURF = 0;
 % perplex_gauss = 0;

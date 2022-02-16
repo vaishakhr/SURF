@@ -1,4 +1,5 @@
-% this code contains synthetic experiments that were run using SURF
+% experiments on synthetic data generated from known distributions 
+
 % parameters alp, deg, n
 % n must be a power of 2
 % code written for deg <= 4

@@ -1,7 +1,9 @@
+%experiemnts on real data
+
 %importing data from sensor1.dat
 %the dataset is of size 57923 after removing outliers, and comes shuffled
 %code works for upto n=2^14, d<=2
-sen = importdata('sensor1.dat');
+sen = importdata('../data/sensor1.dat');
 
 % perplex_SURF = 0;
 % perplex_gauss = 0;

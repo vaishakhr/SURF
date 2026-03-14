@@ -1,0 +1,8 @@
+# macOS
+.DS_Store
+
+# Python (optional; python/ has its own)
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/

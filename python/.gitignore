@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+# Generated plots
+surf_plot*.png
+.DS_Store

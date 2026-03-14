@@ -1,6 +1,6 @@
 # SURF
 
-**SURF** is an algorithm for learning univariate distributions from samples. This repository contains a MATLAB implementation and experiment scripts from our **NeurIPS 2020** paper.
+**SURF** is an algorithm for learning univariate distributions from samples. This repository contains a **MATLAB** implementation and experiment scripts from our **NeurIPS 2020** paper, plus an **efficient Python implementation** in `python/`.
 
 ---
 
@@ -12,7 +12,8 @@ SURF takes a set of samples and returns a piecewise polynomial density estimator
 
 ## Requirements
 
-- **MATLAB** (R2016a or later recommended)
+- **MATLAB** (R2016a or later recommended) for the original implementation
+- **Python 3.8+** and **NumPy** for the optimized implementation in `python/` (see `python/README.md`)
 
 ---
 
@@ -75,7 +76,7 @@ run('src/synthetic_experiments.m');   % or salary_experiments.m, etc.
 ```
 SURF/
 ├── README.md
-├── src/
+├── src/                    % MATLAB implementation
 │   ├── surf.m              % Main SURF function
 │   ├── merge.m             % Interval merging
 │   ├── coeffint.m          % Coefficient computation
@@ -87,6 +88,12 @@ SURF/
 │   ├── salary_experiments.m
 │   ├── sensor_experiments.m
 │   └── cover_experiments.m
+├── python/                 % Efficient Python implementation (see python/README.md)
+│   ├── surf/               % Package: surf(), regpoly()
+│   ├── visualize.py        % Plot SURF on random sample
+│   ├── visualize_salary.py % Plot SURF on data/salary.dat (like salary_experiments.m)
+│   ├── requirements.txt
+│   └── README.md
 └── data/                   % Place salary.dat here for salary experiments
 ```
 

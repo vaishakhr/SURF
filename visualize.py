@@ -1,10 +1,11 @@
 """
 Run SURF and plot the fitted density + sample histogram. Reusable for any dataset.
 
+Run from repo root: python visualize.py
+
 Other scripts (e.g. visualize_salary.py) preprocess their data, then call
 run_and_plot(samples, alpha, degree, out_path, ...) to fit and save the figure.
-
-Requires matplotlib. Run as script for a small random-sample demo.
+Requires matplotlib.
 """
 
 import os
@@ -15,7 +16,7 @@ from surf import surf, regpoly
 
 
 def density_at(x, boundaries, piece_coeffs):
-    """Evaluate the SURF density at x. x can be a scalar or array."""
+    """Evaluate the SURF density at x. x can be a scalar or array. Uses piece_coeffs[i] for the piece containing x."""
     x = np.asarray(x, dtype=np.float64)
     idx = np.searchsorted(boundaries, x, side="right") - 1
     idx = np.clip(idx, 0, piece_coeffs.shape[0] - 1)
@@ -58,7 +59,7 @@ def run_and_plot(
 
     Returns (boundaries, piece_coeffs, num_pieces).
     """
-    import matplotlib.pyplot as plt
+    import matplotlib.pyplot as plt  # noqa: F401
 
     boundaries, piece_coeffs = surf(samples, alpha=alpha, degree=degree)
     num_pieces = len(boundaries) - 1

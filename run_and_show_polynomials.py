@@ -1,5 +1,7 @@
 """
-Run SURF on sample data and print the piecewise polynomial output.
+Run SURF on a small random sample and print each piece's polynomial.
+
+Run from repo root: python run_and_show_polynomials.py
 """
 
 import numpy as np

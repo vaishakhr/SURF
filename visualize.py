@@ -116,8 +116,8 @@ def main():
     num_samples = 2**6 - 1
     samples = np.sort(np.random.uniform(0.02, 0.98, num_samples))
 
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    out_path = os.path.join(script_dir, "surf_plot.png")
+    repo_root = os.path.dirname(os.path.abspath(__file__))
+    out_path = os.path.join(repo_root, "surf_plot.png")
     boundaries, piece_coeffs, num_pieces = run_and_plot(
         samples, alpha=1.0, degree=2, out_path=out_path,
         title="SURF fit — {num_pieces} pieces",

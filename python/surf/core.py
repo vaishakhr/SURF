@@ -31,58 +31,58 @@ def regpoly(x: NDArray[np.float64] | float, a: NDArray[np.float64]) -> NDArray[n
     return p if p.shape else float(p.flat[0])
 
 
-def _matcoeff_row(n1: float, n2: float, n: int, deg: int) -> NDArray[np.float64]:
-    """One row of the coefficient matrix: n * (n2^i - n1^i) / i for i in 1..deg+1."""
-    i = np.arange(1, deg + 2, dtype=np.float64)
+def _matcoeff_row(n1: float, n2: float, n: int, degree: int) -> NDArray[np.float64]:
+    """One row of the coefficient matrix: n * (n2^i - n1^i) / i for i in 1..degree+1."""
+    i = np.arange(1, degree + 2, dtype=np.float64)
     return n * (np.power(n2, i) - np.power(n1, i)) / i
 
 
-def _count_in_interval(samp: NDArray[np.float64], a: float, b: float) -> int:
-    """Count samples strictly in (a, b) using binary search. samp must be sorted."""
-    if samp.size == 0 or a >= b:
+def _count_in_interval(samples: NDArray[np.float64], a: float, b: float) -> int:
+    """Count samples strictly in (a, b) using binary search. samples must be sorted."""
+    if samples.size == 0 or a >= b:
         return 0
-    left = np.searchsorted(samp, a, side="right")   # first index with samp[i] > a
-    right = np.searchsorted(samp, b, side="left")   # first index with samp[i] >= b
+    left = np.searchsorted(samples, a, side="right")
+    right = np.searchsorted(samples, b, side="left")
     return max(0, right - left)
 
 
 def _coeffint(
-    samp: NDArray[np.float64],
-    I0: float,
-    I1: float,
+    samples: NDArray[np.float64],
+    left: float,
+    right: float,
     n: int,
-    deg: int,
+    degree: int,
 ) -> NDArray[np.float64]:
     """
-    Coefficients for polynomial fit on interval [I0, I1].
-    Caller may pass samp restricted to [I0, I1] for efficiency; must be sorted.
+    Coefficients for polynomial fit on interval [left, right].
+    Caller may pass samples restricted to [left, right] for efficiency; must be sorted.
     """
-    len_i = I1 - I0
-    if len_i <= 0 or len_i < 1e-12:
-        return np.zeros(deg + 1, dtype=np.float64)
-    row = OPND1[deg]
-    opnd = row[: deg + 2] * len_i + I0
+    interval_len = right - left
+    if interval_len <= 0 or interval_len < 1e-12:
+        return np.zeros(degree + 1, dtype=np.float64)
+    row = OPND1[degree]
+    nodes = row[: degree + 2] * interval_len + left
 
-    sampin_i = _count_in_interval(samp, I0, I1)
-    normali = len_i * (sampin_i + 1) / (len_i * sampin_i + 1)
+    count_in_interval = _count_in_interval(samples, left, right)
+    normalizer = interval_len * (count_in_interval + 1) / (interval_len * count_in_interval + 1)
 
-    empvec = np.zeros(deg + 1, dtype=np.float64)
-    for i in range(deg + 1):
-        bin_left, bin_right = opnd[i], opnd[i + 1]
-        cnt = _count_in_interval(samp, bin_left, bin_right)
-        delta_node = (row[i + 1] - row[i]) / len_i
-        empvec[i] = (delta_node + cnt) * normali * (deg + 1)
+    emp_vec = np.zeros(degree + 1, dtype=np.float64)
+    for i in range(degree + 1):
+        bin_left, bin_right = nodes[i], nodes[i + 1]
+        cnt = _count_in_interval(samples, bin_left, bin_right)
+        delta_node = (row[i + 1] - row[i]) / interval_len
+        emp_vec[i] = (delta_node + cnt) * normalizer * (degree + 1)
 
-    matco = np.zeros((deg + 1, deg + 1), dtype=np.float64)
-    scale = float(deg + 1)
-    for j in range(deg + 1):
-        matco[j, :] = scale * _matcoeff_row(opnd[j], opnd[j + 1], n, deg)
+    mat = np.zeros((degree + 1, degree + 1), dtype=np.float64)
+    scale = float(degree + 1)
+    for j in range(degree + 1):
+        mat[j, :] = scale * _matcoeff_row(nodes[j], nodes[j + 1], n, degree)
 
     try:
-        r = np.linalg.solve(matco, empvec)
+        coeff = np.linalg.solve(mat, emp_vec)
     except np.linalg.LinAlgError:
-        r = np.zeros(deg + 1, dtype=np.float64)
-    return r
+        coeff = np.zeros(degree + 1, dtype=np.float64)
+    return coeff
 
 
 def _integral_abs_poly(a: float, b: float, coeffs: NDArray[np.float64]) -> float:
@@ -114,184 +114,184 @@ def _integral_abs_poly(a: float, b: float, coeffs: NDArray[np.float64]) -> float
     return float(total)
 
 
-def _differ(I0: float, I1: float, c1: NDArray[np.float64], c2: NDArray[np.float64]) -> float:
-    """L1 difference between polynomials c1 and c2 over [I0, I1] (exact integral)."""
-    diff = np.asarray(c1, dtype=np.float64).ravel() - np.asarray(c2, dtype=np.float64).ravel()
-    return _integral_abs_poly(I0, I1, diff)
+def _differ(left: float, right: float, coeff_a: NDArray[np.float64], coeff_b: NDArray[np.float64]) -> float:
+    """L1 difference between polynomials coeff_a and coeff_b over [left, right] (exact integral)."""
+    diff = np.asarray(coeff_a, dtype=np.float64).ravel() - np.asarray(coeff_b, dtype=np.float64).ravel()
+    return _integral_abs_poly(left, right, diff)
 
 
-def _samp_slice(samp: NDArray[np.float64], a: float, b: float) -> tuple[NDArray[np.float64], int, int]:
-    """Return samp restricted to [a,b] and indices ilo, ihi such that samp[ilo:ihi] is that slice."""
-    if samp.size == 0:
-        return samp, 0, 0
-    ilo = np.searchsorted(samp, a, side="right")
-    ihi = np.searchsorted(samp, b, side="left")
-    ilo, ihi = int(ilo), int(ihi)
-    return samp[ilo:ihi], ilo, ihi
+def _samples_in_interval(samples: NDArray[np.float64], a: float, b: float) -> tuple[NDArray[np.float64], int, int]:
+    """Return samples restricted to [a, b] and indices lo, hi such that samples[lo:hi] is that slice."""
+    if samples.size == 0:
+        return samples, 0, 0
+    lo = np.searchsorted(samples, a, side="right")
+    hi = np.searchsorted(samples, b, side="left")
+    lo, hi = int(lo), int(hi)
+    return samples[lo:hi], lo, hi
 
 
 def _maxcrit(
-    samp: NDArray[np.float64],
-    I: NDArray[np.float64],
-    cumuprobI: NDArray[np.float64],
-    maincoeff: NDArray[np.float64],
+    samples: NDArray[np.float64],
+    boundaries: NDArray[np.float64],
+    cumulative_probs: NDArray[np.float64],
+    merged_coeff: NDArray[np.float64],
     n: int,
-    deg: int,
-    alp: float,
-    precomp_koi: NDArray[np.float64] | None,
-    precomp_I: NDArray[np.float64] | None,
+    degree: int,
+    alpha: float,
+    precomputed_coeffs: NDArray[np.float64] | None,
+    precomputed_boundaries: NDArray[np.float64] | None,
 ) -> float:
     """
-    Recursive criterion. If precomp_koi and precomp_I are given and current I
-    is a single interval matching a segment in precomp_I, use precomp_koi instead of coeffint.
+    Recursive criterion. If precomputed_coeffs and precomputed_boundaries are given and the
+    current block is a single interval matching a segment, use the precomputed coefficient.
     """
-    I0, I1 = float(I[0]), float(I[-1])
-    num_intervals = I.shape[0] - 1
+    left, right = float(boundaries[0]), float(boundaries[-1])
+    num_intervals = boundaries.shape[0] - 1
 
-    if precomp_koi is not None and precomp_I is not None and num_intervals == 1:
-        # Look up precomputed coefficient for this interval
+    if precomputed_coeffs is not None and precomputed_boundaries is not None and num_intervals == 1:
         tol = 1e-12
-        for idx in range(precomp_I.shape[0] - 1):
-            if abs(precomp_I[idx] - I0) <= tol and abs(precomp_I[idx + 1] - I1) <= tol:
-                coeff_i = precomp_koi[idx, :]
+        for idx in range(precomputed_boundaries.shape[0] - 1):
+            if (abs(precomputed_boundaries[idx] - left) <= tol and
+                    abs(precomputed_boundaries[idx + 1] - right) <= tol):
+                piece_coeff = precomputed_coeffs[idx, :]
                 break
         else:
-            coeff_i = _coeffint(samp, I0, I1, n, deg)
+            piece_coeff = _coeffint(samples, left, right, n, degree)
     else:
-        coeff_i = _coeffint(samp, I0, I1, n, deg)
+        piece_coeff = _coeffint(samples, left, right, n, degree)
 
-    sumprob = cumuprobI[-1]
-    differ_i = _differ(I0, I1, maincoeff, coeff_i) - alp * np.sqrt(
-        (deg + 1) * sumprob * np.log(n) / n
+    total_prob = cumulative_probs[-1]
+    criterion = _differ(left, right, merged_coeff, piece_coeff) - alpha * np.sqrt(
+        (degree + 1) * total_prob * np.log(n) / n
     )
 
     if num_intervals <= 1:
-        return float(differ_i)
+        return float(criterion)
 
-    half = 0.5 * sumprob
-    mask1 = cumuprobI <= half
-    mask2 = cumuprobI >= half
-    I1_arr = I[mask1]
-    I2_arr = I[mask2]
-    cumuprobI1 = cumuprobI[mask1]
-    cumuprobI2 = cumuprobI[mask2] - half
+    half = 0.5 * total_prob
+    mask_left = cumulative_probs <= half
+    mask_right = cumulative_probs >= half
+    boundaries_left = boundaries[mask_left]
+    boundaries_right = boundaries[mask_right]
+    probs_left = cumulative_probs[mask_left]
+    probs_right = cumulative_probs[mask_right] - half
 
-    samp1, _, _ = _samp_slice(samp, I1_arr[0], I1_arr[-1])
-    samp2, _, _ = _samp_slice(samp, I2_arr[0], I2_arr[-1])
+    samples_left, _, _ = _samples_in_interval(samples, boundaries_left[0], boundaries_left[-1])
+    samples_right, _, _ = _samples_in_interval(samples, boundaries_right[0], boundaries_right[-1])
 
-    val1 = _maxcrit(
-        samp1, I1_arr, cumuprobI1, maincoeff, n, deg, alp,
-        precomp_koi, precomp_I,
+    val_left = _maxcrit(
+        samples_left, boundaries_left, probs_left, merged_coeff, n, degree, alpha,
+        precomputed_coeffs, precomputed_boundaries,
     )
-    val2 = _maxcrit(
-        samp2, I2_arr, cumuprobI2, maincoeff, n, deg, alp,
-        precomp_koi, precomp_I,
+    val_right = _maxcrit(
+        samples_right, boundaries_right, probs_right, merged_coeff, n, degree, alpha,
+        precomputed_coeffs, precomputed_boundaries,
     )
-    return float(max(differ_i, val1 + val2))
+    return float(max(criterion, val_left + val_right))
 
 
 def _merge(
-    samp: NDArray[np.float64],
-    I: NDArray[np.float64],
-    cumuprobI: NDArray[np.float64],
+    samples: NDArray[np.float64],
+    boundaries: NDArray[np.float64],
+    cumulative_probs: NDArray[np.float64],
     n: int,
-    deg: int,
-    alp: float,
-    precomp_koi: NDArray[np.float64] | None,
-    precomp_I: NDArray[np.float64] | None,
+    degree: int,
+    alpha: float,
+    precomputed_coeffs: NDArray[np.float64] | None,
+    precomputed_boundaries: NDArray[np.float64] | None,
 ) -> tuple[bool, NDArray[np.float64]]:
-    """Decide whether to merge the block I; return (merge?, merged_coeff)."""
-    I0, I1 = float(I[0]), float(I[-1])
-    samp_in_I, _, _ = _samp_slice(samp, I0, I1)
-    maincoeff = _coeffint(samp_in_I, I0, I1, n, deg)
+    """Decide whether to merge the block; return (should_merge, merged_coeff)."""
+    left, right = float(boundaries[0]), float(boundaries[-1])
+    samples_in_block, _, _ = _samples_in_interval(samples, left, right)
+    merged_coeff = _coeffint(samples_in_block, left, right, n, degree)
 
-    sumprob = cumuprobI[-1]
-    half = 0.5 * sumprob
-    mask1 = cumuprobI <= half
-    mask2 = cumuprobI >= half
-    I1_arr = I[mask1]
-    I2_arr = I[mask2]
-    cumuprobI1 = cumuprobI[mask1]
-    cumuprobI2 = cumuprobI[mask2] - half
+    total_prob = cumulative_probs[-1]
+    half = 0.5 * total_prob
+    mask_left = cumulative_probs <= half
+    mask_right = cumulative_probs >= half
+    boundaries_left = boundaries[mask_left]
+    boundaries_right = boundaries[mask_right]
+    probs_left = cumulative_probs[mask_left]
+    probs_right = cumulative_probs[mask_right] - half
 
-    samp1, _, _ = _samp_slice(samp, I1_arr[0], I1_arr[-1])
-    samp2, _, _ = _samp_slice(samp, I2_arr[0], I2_arr[-1])
+    samples_left, _, _ = _samples_in_interval(samples, boundaries_left[0], boundaries_left[-1])
+    samples_right, _, _ = _samples_in_interval(samples, boundaries_right[0], boundaries_right[-1])
 
     val = _maxcrit(
-        samp1, I1_arr, cumuprobI1, maincoeff, n, deg, alp,
-        precomp_koi, precomp_I,
+        samples_left, boundaries_left, probs_left, merged_coeff, n, degree, alpha,
+        precomputed_coeffs, precomputed_boundaries,
     ) + _maxcrit(
-        samp2, I2_arr, cumuprobI2, maincoeff, n, deg, alp,
-        precomp_koi, precomp_I,
+        samples_right, boundaries_right, probs_right, merged_coeff, n, degree, alpha,
+        precomputed_coeffs, precomputed_boundaries,
     )
 
-    return (val <= 0, maincoeff)
+    return (val <= 0, merged_coeff)
 
 
 def surf(
-    samp: NDArray[np.float64],
-    alp: float,
-    deg: int,
+    samples: NDArray[np.float64],
+    alpha: float,
+    degree: int,
 ) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
     """
     SURF algorithm: learn piecewise polynomial density on [0, 1].
 
     Parameters
     ----------
-    samp : array of shape (n-1,) with n = 2^k for some k
+    samples : array of shape (n-1,) with n = 2^k for some k
         Sorted samples strictly in (0, 1).
-    alp : float
-        Tuning parameter (e.g. 0.25).
-    deg : int
-        Polynomial degree per piece (1 <= deg <= 4).
+    alpha : float
+        Tuning parameter (larger → fewer pieces).
+    degree : int
+        Polynomial degree per piece (1 <= degree <= 4).
 
     Returns
     -------
-    I : array
+    boundaries : array
         Interval boundaries (partition of [0, 1]).
-    koi : array of shape (len(I)-1, deg+1)
+    piece_coeffs : array of shape (num_pieces, degree+1)
         Polynomial coefficients for each piece (constant term first).
     """
-    samp = np.asarray(samp, dtype=np.float64).ravel()
-    n = samp.size + 1
+    samples = np.asarray(samples, dtype=np.float64).ravel()
+    n = samples.size + 1
     if n & (n - 1) != 0:
-        raise ValueError("numel(samp)+1 must be a power of 2")
+        raise ValueError("len(samples)+1 must be a power of 2")
 
-    if not (1 <= deg <= 4):
-        raise ValueError("deg must be in 1..4")
+    if not (1 <= degree <= 4):
+        raise ValueError("degree must be in 1..4")
 
-    I = np.concatenate([[0.0], np.sort(samp), [1.0]])
-    cumuprobI = np.linspace(0, 1, n + 1)
-    koi = np.zeros((n + 1, deg + 1), dtype=np.float64)
+    boundaries = np.concatenate([[0.0], np.sort(samples), [1.0]])
+    cumulative_probs = np.linspace(0, 1, n + 1)
+    piece_coeffs = np.zeros((n + 1, degree + 1), dtype=np.float64)
 
     for i in range(n):
-        koi[i, :] = _coeffint(samp, I[i], I[i + 1], n, deg)
+        piece_coeffs[i, :] = _coeffint(samples, boundaries[i], boundaries[i + 1], n, degree)
 
-    D = int(np.log2(n))
-    for level in range(D):
-        for j in range(2 ** (D - 1 - level)):
-            probinit = j * 2 ** (-(D - 1 - level))
-            probfin = (j + 1) * 2 ** (-(D - 1 - level))
-            mask = (cumuprobI >= probinit) & (cumuprobI <= probfin)
-            cumuprobIcand = cumuprobI[mask] - probinit
-            Icand = I[mask]
+    num_levels = int(np.log2(n))
+    for level in range(num_levels):
+        for j in range(2 ** (num_levels - 1 - level)):
+            prob_start = j * 2 ** (-(num_levels - 1 - level))
+            prob_end = (j + 1) * 2 ** (-(num_levels - 1 - level))
+            mask = (cumulative_probs >= prob_start) & (cumulative_probs <= prob_end)
+            probs_cand = cumulative_probs[mask] - prob_start
+            boundaries_cand = boundaries[mask]
 
-            if Icand.shape[0] <= 1:
+            if boundaries_cand.shape[0] <= 1:
                 continue
 
-            res, koooi = _merge(
-                samp, Icand, cumuprobIcand, n, deg, alp,
-                precomp_koi=koi, precomp_I=I,
+            should_merge, merged_coeff = _merge(
+                samples, boundaries_cand, probs_cand, n, degree, alpha,
+                precomputed_coeffs=piece_coeffs, precomputed_boundaries=boundaries,
             )
 
-            if res:
-                keep = (cumuprobI <= probinit) | (cumuprobI >= probfin)
-                I = I[keep]
-                koi = koi[keep]
-                cumuprobI = cumuprobI[keep]
-                idx_probinit = np.argmin(np.abs(cumuprobI - probinit))
-                koi[idx_probinit, :] = koooi
+            if should_merge:
+                keep = (cumulative_probs <= prob_start) | (cumulative_probs >= prob_end)
+                boundaries = boundaries[keep]
+                piece_coeffs = piece_coeffs[keep]
+                cumulative_probs = cumulative_probs[keep]
+                idx_start = np.argmin(np.abs(cumulative_probs - prob_start))
+                piece_coeffs[idx_start, :] = merged_coeff
 
-    # koi has one extra row (dummy); return only rows for each interval
-    koi = koi[: I.shape[0] - 1, :]
-    return I, koi
+    num_pieces = boundaries.shape[0] - 1
+    piece_coeffs = piece_coeffs[:num_pieces, :]
+    return boundaries, piece_coeffs

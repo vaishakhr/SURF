@@ -2,7 +2,7 @@
 Run SURF and plot the fitted density + sample histogram. Reusable for any dataset.
 
 Other scripts (e.g. visualize_salary.py) preprocess their data, then call
-run_and_plot(samp, alp, deg, out_path, ...) to fit and save the figure.
+run_and_plot(samples, alpha, degree, out_path, ...) to fit and save the figure.
 
 Requires matplotlib. Run as script for a small random-sample demo.
 """
@@ -14,53 +14,53 @@ matplotlib.use("Agg")
 from surf import surf, regpoly
 
 
-def density_at(x, I, koi):
+def density_at(x, boundaries, piece_coeffs):
     """Evaluate the SURF density at x. x can be a scalar or array."""
     x = np.asarray(x, dtype=np.float64)
-    idx = np.searchsorted(I, x, side="right") - 1
-    idx = np.clip(idx, 0, koi.shape[0] - 1)
+    idx = np.searchsorted(boundaries, x, side="right") - 1
+    idx = np.clip(idx, 0, piece_coeffs.shape[0] - 1)
     out = np.zeros_like(x)
     for i in np.unique(idx):
         mask = idx == i
-        out[mask] = regpoly(x[mask], koi[i, :])
+        out[mask] = regpoly(x[mask], piece_coeffs[i, :])
     return out
 
 
 def run_and_plot(
-    samp,
-    alp,
-    deg,
+    samples,
+    alpha,
+    degree,
     out_path,
     *,
     title=None,
     xlabel="x",
 ):
     """
-    Run SURF on samp, plot density + histogram, save to out_path.
+    Run SURF on samples, plot density + histogram, save to out_path.
 
-    samp: sorted 1D array of size 2^k - 1 in (0, 1)
-    alp, deg: SURF parameters
+    samples: sorted 1D array of size 2^k - 1 in (0, 1)
+    alpha, degree: SURF parameters
     out_path: path for the saved PNG
     title: plot title. If it contains "{num_pieces}", that is filled in.
            If None, uses "SURF fit — {num_pieces} pieces".
     xlabel: x-axis label
 
-    Returns (I, koi, num_pieces).
+    Returns (boundaries, piece_coeffs, num_pieces).
     """
     import matplotlib.pyplot as plt
 
-    I, koi = surf(samp, alp=alp, deg=deg)
-    num_pieces = len(I) - 1
+    boundaries, piece_coeffs = surf(samples, alpha=alpha, degree=degree)
+    num_pieces = len(boundaries) - 1
 
     x_plot = np.linspace(0.001, 0.999, 500)
-    f_plot = density_at(x_plot, I, koi)
+    f_plot = density_at(x_plot, boundaries, piece_coeffs)
 
     fig, ax = plt.subplots(1, 1, figsize=(8, 4))
     ax.fill_between(x_plot, f_plot, alpha=0.3, label="SURF density")
     ax.plot(x_plot, f_plot, color="C0", lw=1.5, label="p(x)")
     ax.hist(
-        samp,
-        bins=min(60, max(20, len(samp) // 200)),
+        samples,
+        bins=min(60, max(20, len(samples) // 200)),
         density=True,
         alpha=0.5,
         color="gray",
@@ -78,7 +78,7 @@ def run_and_plot(
     ax.set_title(title)
     ax.text(
         0.02, 0.98,
-        f"α = {alp}\nd = {deg}\n# pieces = {num_pieces}",
+        f"α = {alpha}\nd = {degree}\n# pieces = {num_pieces}",
         transform=ax.transAxes,
         fontsize=10,
         verticalalignment="top",
@@ -87,7 +87,7 @@ def run_and_plot(
     plt.tight_layout()
     plt.savefig(out_path, dpi=120)
     plt.close()
-    return I, koi, num_pieces
+    return boundaries, piece_coeffs, num_pieces
 
 
 def main():
@@ -98,13 +98,13 @@ def main():
         return
 
     np.random.seed(42)
-    n = 2**6 - 1
-    samp = np.sort(np.random.uniform(0.02, 0.98, n))
+    num_samples = 2**6 - 1
+    samples = np.sort(np.random.uniform(0.02, 0.98, num_samples))
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
     out_path = os.path.join(script_dir, "surf_plot.png")
-    I, koi, num_pieces = run_and_plot(
-        samp, alp=1.0, deg=1, out_path=out_path,
+    boundaries, piece_coeffs, num_pieces = run_and_plot(
+        samples, alpha=1.0, degree=1, out_path=out_path,
         title="SURF fit — {num_pieces} pieces",
     )
     print(f"SURF fit: {num_pieces} pieces")

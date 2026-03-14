@@ -47,7 +47,7 @@ def main():
         return
 
     alpha = 1.0
-    degree = 1
+    degree = 2
 
     samples = load_sensor_chunk(data_path)
     print(f"Preprocessed {len(samples)} samples from sensor1.dat (one chunk, scaled to (0,1))")

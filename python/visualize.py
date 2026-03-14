@@ -119,7 +119,7 @@ def main():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     out_path = os.path.join(script_dir, "surf_plot.png")
     boundaries, piece_coeffs, num_pieces = run_and_plot(
-        samples, alpha=1.0, degree=1, out_path=out_path,
+        samples, alpha=1.0, degree=2, out_path=out_path,
         title="SURF fit — {num_pieces} pieces",
     )
     print(f"SURF fit: {num_pieces} pieces")

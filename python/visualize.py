@@ -26,6 +26,17 @@ def density_at(x, boundaries, piece_coeffs):
     return out
 
 
+def _integrate_piecewise_poly(boundaries, piece_coeffs):
+    """Integral of piecewise polynomial over [0, 1]. Each piece p(x) = sum_k c_k x^k."""
+    total = 0.0
+    for i in range(piece_coeffs.shape[0]):
+        a, b = boundaries[i], boundaries[i + 1]
+        coeffs = piece_coeffs[i, :]
+        for k, c in enumerate(coeffs):
+            total += c * (b ** (k + 1) - a ** (k + 1)) / (k + 1)
+    return total
+
+
 def run_and_plot(
     samples,
     alpha,
@@ -54,6 +65,10 @@ def run_and_plot(
 
     x_plot = np.linspace(0.001, 0.999, 500)
     f_plot = density_at(x_plot, boundaries, piece_coeffs)
+    # Normalize so SURF density integrates to 1 (comparable to histogram with density=True)
+    total_mass = _integrate_piecewise_poly(boundaries, piece_coeffs)
+    if total_mass > 0:
+        f_plot = f_plot / total_mass
 
     fig, ax = plt.subplots(1, 1, figsize=(8, 4))
     ax.fill_between(x_plot, f_plot, alpha=0.3, label="SURF density")

@@ -1,8 +1,9 @@
 # macOS
 .DS_Store
 
-# Python (optional; python/ has its own)
+# Python
 __pycache__/
 *.pyc
 .venv/
 *.egg-info/
+surf_plot*.png

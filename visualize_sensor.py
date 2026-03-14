@@ -1,10 +1,10 @@
 """
-SURF on salary data (same setup as MATLAB salary_experiments.m).
+SURF on sensor data (same setup as MATLAB sensor_experiments.m).
 
-Only preprocessing: loads data/salary.dat, scales to (0, 1), then calls
+Only preprocessing: loads data/sensor1.dat, scales to (0, 1), then calls
 visualize.run_and_plot() to fit and save the figure. Edit alpha and degree below.
 
-Run: cd python && PYTHONPATH=. python visualize_salary.py
+Run from repo root: python visualize_sensor.py  (or PYTHONPATH=. python visualize_sensor.py)
 """
 
 import os
@@ -12,11 +12,11 @@ import numpy as np
 from visualize import run_and_plot
 
 
-def load_salary_chunk(data_path, chunk_size=2**13, offset=0):
+def load_sensor_chunk(data_path, chunk_size=2**14, offset=0):
     """
-    Load salary data and return SURF-ready samples for one chunk.
+    Load sensor data and return SURF-ready samples for one chunk.
 
-    Same preprocessing as MATLAB salary_experiments.m: take chunk of size chunk_size+1,
+    Same preprocessing as MATLAB sensor_experiments.m: take chunk of size chunk_size+1,
     sort, drop min/max, scale to (0, 1) → chunk_size - 1 samples. chunk_size must be 2^k.
 
     Returns
@@ -37,29 +37,28 @@ def load_salary_chunk(data_path, chunk_size=2**13, offset=0):
 
 
 def main():
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    project_root = os.path.dirname(script_dir)
-    data_path = os.path.join(project_root, "data", "salary.dat")
+    repo_root = os.path.dirname(os.path.abspath(__file__))
+    data_path = os.path.join(repo_root, "data", "sensor1.dat")
 
     if not os.path.isfile(data_path):
         print(f"Data file not found: {data_path}")
-        print("Place salary.dat in the project's data/ folder (see README).")
+        print("Place sensor1.dat in the project's data/ folder (see README).")
         return
 
     alpha = 1.0
     degree = 2
 
-    samples = load_salary_chunk(data_path)
-    print(f"Preprocessed {len(samples)} samples from salary.dat (one chunk, scaled to (0,1))")
+    samples = load_sensor_chunk(data_path)
+    print(f"Preprocessed {len(samples)} samples from sensor1.dat (one chunk, scaled to (0,1))")
 
-    out_path = os.path.join(script_dir, f"surf_plot_salary_{alpha}.png")
+    out_path = os.path.join(repo_root, f"surf_plot_sensor_{alpha}.png")
     boundaries, piece_coeffs, num_pieces = run_and_plot(
         samples,
         alpha=alpha,
         degree=degree,
         out_path=out_path,
-        title="SURF on salary data — {num_pieces} pieces",
-        xlabel="x (salary scaled to [0,1])",
+        title="SURF on sensor data — {num_pieces} pieces",
+        xlabel="x (sensor scaled to [0,1])",
     )
     print(f"SURF fit: {num_pieces} pieces (degree={degree}, alpha={alpha})")
     print(f"Saved plot to {out_path}")

@@ -1,7 +1,7 @@
 """
-Efficient Python implementation of SURF (learning univariate distributions).
+SURF: piecewise polynomial density estimation on [0,1] from univariate samples.
 
-Optimizations applied:
+Efficient Python implementation. Optimizations applied:
 - Binary search (numpy.searchsorted) for sample counts instead of full scans
 - Exact integral of |polynomial| in differ() instead of numerical integration
 - Reuse of precomputed single-interval coefficients in maxcrit
@@ -267,6 +267,7 @@ def surf(
     for i in range(n):
         piece_coeffs[i, :] = _coeffint(samples, boundaries[i], boundaries[i + 1], n, degree)
 
+    # Recursively merge adjacent intervals when the penalized L1 criterion is <= 0.
     num_levels = int(np.log2(n))
     for level in range(num_levels):
         for j in range(2 ** (num_levels - 1 - level)):

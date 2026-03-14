@@ -1,15 +1,17 @@
 """
-Replicate synthetic data experiments from MATLAB (src/synthetic_experiments.m).
+Synthetic experiments: beta, gamma, and Gaussian mixture data.
 
-Experiments on data from known distributions: beta mixture, gamma mixture,
-gaussian mixture. Run SURF, compute L1 difference (discrete), and plot
-true density vs SURF estimate.
+Replicates MATLAB experiments: generate samples from known densities, run SURF,
+compute discrete L1 error, and plot true density vs SURF estimate. Run from
+repo root: python synthetic_experiments.py.
 
 Parameters: alpha (tuning), degree (polynomial degree), n (power of 2).
-Defaults used here: alpha = 1.0, degree = 2. Code supports degree <= 4.
+Defaults: alpha = 1.0, degree = 2. Code supports degree <= 4.
 """
 
 import os
+from typing import Any, Dict, Optional
+
 import numpy as np
 from scipy.special import beta as beta_fn, gamma as gamma_fn
 
@@ -37,7 +39,7 @@ def surf_estim_at(x, boundaries, piece_coeffs):
     return out
 
 
-def run_beta_mixture(n_trials=10, seed=None):
+def run_beta_mixture(n_trials: int = 10, seed: Optional[int] = None) -> Dict[str, Any]:
     """Beta mixture: prob * Beta(beta_alp, beta_bet) + (1-prob) * Beta(beta_alp_1, beta_bet_1)."""
     degree = 2
     alpha = 1.0
@@ -50,7 +52,7 @@ def run_beta_mixture(n_trials=10, seed=None):
 
     pres = 16 * n + 1
     Y = np.linspace(0, 1, pres + 1)
-    skip = 32  # avoid blow-up at 0
+    skip = 32  # skip first 32 grid points in L1 so boundary singularities don't dominate
 
     def true_density(x):
         # Clip to avoid 0^neg or 1^neg at boundaries (beta PDF can blow up at 0/1)
@@ -89,7 +91,7 @@ def run_beta_mixture(n_trials=10, seed=None):
     }
 
 
-def run_gamma_mixture(n_trials=10, seed=None):
+def run_gamma_mixture(n_trials: int = 10, seed: Optional[int] = None) -> Dict[str, Any]:
     """Gamma mixture; tail trimmed and rescaled to [0,1]."""
     degree = 2
     alpha = 1.0
@@ -103,7 +105,7 @@ def run_gamma_mixture(n_trials=10, seed=None):
 
     pres = 16 * n + 1
     Y = np.linspace(0, 1, pres + 1)
-    skip = 32
+    skip = 32  # skip boundary region in L1
 
     def true_density(x):
         # x is on original scale (before rescale). Return density on original scale.
@@ -145,7 +147,7 @@ def run_gamma_mixture(n_trials=10, seed=None):
     }
 
 
-def run_gaussian_mixture(n_trials=5, seed=None):
+def run_gaussian_mixture(n_trials: int = 5, seed: Optional[int] = None) -> Dict[str, Any]:
     """Gaussian mixture; outliers trimmed and segment rescaled to [0,1]."""
     degree = 2
     alpha = 1.0
@@ -160,7 +162,7 @@ def run_gaussian_mixture(n_trials=5, seed=None):
 
     pres = 16 * n + 1
     Y = np.linspace(0, 1, pres + 1)
-    skip = 32
+    skip = 32  # skip boundary region in L1
 
     def true_density(x):
         t = prob * np.exp(-((x - gauss_m) ** 2) / (2 * gauss_sd**2)) / np.sqrt(2 * np.pi * gauss_sd**2)
@@ -203,7 +205,7 @@ def run_gaussian_mixture(n_trials=5, seed=None):
     }
 
 
-def plot_result(result, out_path):
+def plot_result(result: Dict[str, Any], out_path: str) -> None:
     """Plot true density vs SURF estimate and save to out_path."""
     if not _has_plt:
         print("matplotlib not available, skip plot")

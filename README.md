@@ -92,6 +92,7 @@ SURF/
 │   ├── surf/               % Package: surf(), regpoly()
 │   ├── visualize.py        % Plot SURF on random sample
 │   ├── visualize_salary.py % Plot SURF on data/salary.dat (like salary_experiments.m)
+│   ├── visualize_sensor.py % Plot SURF on data/sensor1.dat (like sensor_experiments.m)
 │   ├── requirements.txt
 │   └── README.md
 └── data/                   % Place salary.dat here for salary experiments

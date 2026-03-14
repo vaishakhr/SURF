@@ -52,13 +52,15 @@ f = np.array([regpoly(xi, piece_coeffs[idx[i], :]) for i, xi in enumerate(x)])
 
 - **`visualize.py`** — Defines `run_and_plot(samples, alpha, degree, out_path, ...)` to run SURF and save a density + histogram plot. Run as a script for a random-sample demo (saves `surf_plot.png`).
 - **`visualize_salary.py`** — Preprocesses `data/salary.dat` (same as MATLAB `salary_experiments.m`), then calls `visualize.run_and_plot()`. Saves `surf_plot_salary_{alpha}.png`. Edit `alpha` and `degree` in the script to try different fits.
+- **`visualize_sensor.py`** — Preprocesses `data/sensor1.dat` (same as MATLAB `sensor_experiments.m`, chunk size 2^14), then calls `visualize.run_and_plot()`. Saves `surf_plot_sensor_{alpha}.png`.
 
 For other datasets: preprocess to a sorted array `samples` of size `2^k - 1` in (0, 1), then call `run_and_plot(samples, alpha, degree, out_path, title=..., xlabel=...)`.
 
 ```bash
 cd python && PYTHONPATH=. python visualize.py
-# or, with salary data in data/salary.dat:
-cd python && PYTHONPATH=. python visualize_salary.py
+# or, with data in data/:
+cd python && PYTHONPATH=. python visualize_salary.py   # data/salary.dat
+cd python && PYTHONPATH=. python visualize_sensor.py   # data/sensor1.dat
 ```
 
 Requires `matplotlib` (in `requirements.txt`). To verify the install, run `visualize.py` or `visualize_salary.py` (with `data/salary.dat` in place).
